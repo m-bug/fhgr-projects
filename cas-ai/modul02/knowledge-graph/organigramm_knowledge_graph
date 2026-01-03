@@ -1,0 +1,18 @@
+digraph "Organizational Knowledge Graph" {
+	fontsize=10 rankdir=TB
+	"Alice (CEO)" [label="Alice (CEO)"]
+	Company [label=Company]
+	"Alice (CEO)" -> Company [label=leads]
+	"Bob (CTO)" [label="Bob (CTO)"]
+	"Alice (CEO)" [label="Alice (CEO)"]
+	"Bob (CTO)" -> "Alice (CEO)" [label=reports_to]
+	"Carol (CFO)" [label="Carol (CFO)"]
+	"Alice (CEO)" [label="Alice (CEO)"]
+	"Carol (CFO)" -> "Alice (CEO)" [label=reports_to]
+	"Dave (Engineer)" [label="Dave (Engineer)"]
+	"Bob (CTO)" [label="Bob (CTO)"]
+	"Dave (Engineer)" -> "Bob (CTO)" [label=reports_to]
+	"Eve (Engineer)" [label="Eve (Engineer)"]
+	"Bob (CTO)" [label="Bob (CTO)"]
+	"Eve (Engineer)" -> "Bob (CTO)" [label=reports_to]
+}
