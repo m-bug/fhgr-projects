@@ -86,18 +86,18 @@ nx.draw_networkx_nodes(
 nx.draw_networkx_edges(G, pos, arrows=True, arrowstyle="->")
 
 # Labels
-nx.draw_networkx_labels(G, pos, font_size=10)
+nx.draw_networkx_labels(G, pos, font_size=16)
 
 # Kantenbeschriftungen (Relationen)
 edge_labels = nx.get_edge_attributes(G, "relation")
 nx.draw_networkx_edge_labels(
     G, pos,
     edge_labels=edge_labels,
-    font_size=9,
+    font_size=14,
     label_pos=0.5
 )
 
-plt.title("Organizational Knowledge Graph (Matplotlib)")
+plt.title("Organizational Knowledge Graph of Fantasy-IT Gmbh")
 plt.axis("off")
 
 plt.savefig('m02_02_knowledge-graph.png', dpi=300)
