@@ -110,10 +110,11 @@ def analyze_emotion_age(image_path: str):
     print(f"Geschlecht: {gender} ({gender_conf:.1f} %)")
     print(f"Emotion: {emotion} ({emotion_conf:.1f} %)")
 
-    display_image(
-        image_path,
-        title=f"Age: {age} | Gender: {gender} | Emotion: {emotion}"
-    )
+    # generate image with analysed numbers
+    #display_image(
+    #    image_path,
+    #    title=f"Age: {age} | Gender: {gender} | Emotion: {emotion}"
+    #)
 
     return result
 
@@ -129,6 +130,7 @@ def display_image(image_path: str, title: str = ""):
     plt.imshow(img)
     plt.axis("off")
     plt.title(title, fontsize=11)
+    plt.savefig('m04_03_deepface.png', dpi=300)
     plt.show()
 
 
