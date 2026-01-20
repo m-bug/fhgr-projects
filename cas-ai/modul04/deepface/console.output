@@ -1,0 +1,120 @@
+bash-5.3$ python deepface-all.py
+2026-01-19 21:26:46.819467: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+2026-01-19 21:26:46.896981: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-01-19 21:26:48.931369: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+26-01-19 21:26:50 - Directory /home/marc/.deepface has been created
+26-01-19 21:26:50 - Directory /home/marc/.deepface/weights has been created
+2026-01-19 21:26:50.723451: E external/local_xla/xla/stream_executor/cuda/cuda_platform.cc:51] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+26-01-19 21:26:51 - 🔗 vgg_face_weights.h5 will be downloaded from https://github.com/serengil/deepface_models/releases/download/v1.0/vgg_face_weights.h5 to /home/marc/.deepface/weights/vgg_face_weights.h5...
+Downloading...
+From: https://github.com/serengil/deepface_models/releases/download/v1.0/vgg_face_weights.h5
+To: /home/marc/.deepface/weights/vgg_face_weights.h5
+100%|████████████████████████████████████████████████████████████████████████████████████████████| 580M/580M [00:10<00:00, 56.3MB/s]
+26-01-19 21:27:07 - retinaface.h5 will be downloaded from the url https://github.com/serengil/deepface_models/releases/download/v1.0/retinaface.h5
+Downloading...
+From: https://github.com/serengil/deepface_models/releases/download/v1.0/retinaface.h5
+To: /home/marc/.deepface/weights/retinaface.h5
+100%|████████████████████████████████████████████████████████████████████████████████████████████| 119M/119M [00:01<00:00, 66.7MB/s]
+
+=== Use Case 1: Face Verification ===
+Gleiche Person: True
+Distanz: 0.6391
+Threshold: 0.68
+
+=== Use Case 1: Face Verification ===
+Gleiche Person: False
+Distanz: 0.7586
+Threshold: 0.68
+
+=== Use Case 2: Face Identification ===
+26-01-19 21:27:21 - Found 1800 newly added image(s), 0 removed image(s), 0 replaced image(s).
+Finding representations: 100%|████████████████████████████████████████████████████████████████| 1800/1800 [1:17:25<00:00,  2.58s/it]
+26-01-19 22:44:47 - There are now 2011 representations in ds_model_vggface_detector_retinaface_aligned_normalization_base_expand_0.pkl
+26-01-19 22:44:49 - Searching database/Angelina Jolie/001_fe3347c0.jpg in 2011 length datastore
+26-01-19 22:44:51 - find function duration 4650.565074443817 seconds
+Beste Übereinstimmung:
+Bild: database/Angelina Jolie/001_fe3347c0.jpg
+Distanz: 0.0409
+Action: age:   0%|                                                                                            | 0/3 [00:00<?, ?it/s]26-01-19 22:44:54 - 🔗 age_model_weights.h5 will be downloaded from https://github.com/serengil/deepface_models/releases/download/v1.0/age_model_weights.h5 to /home/marc/.deepface/weights/age_model_weights.h5...
+Downloading...
+From: https://github.com/serengil/deepface_models/releases/download/v1.0/age_model_weights.h5
+To: /home/marc/.deepface/weights/age_model_weights.h5
+100%|█████████████████████████████████████████████████████████████████████████████████████████████| 539M/539M [00:04<00:00, 112MB/s]
+Action: gender:  33%|███████████████████████████                                                      | 1/3 [00:06<00:13,  6.73s/it]26-01-19 22:45:00 - 🔗 gender_model_weights.h5 will be downloaded from https://github.com/serengil/deepface_models/releases/download/v1.0/gender_model_weights.h5 to /home/marc/.deepface/weights/gender_model_weights.h5...
+Downloading...
+From: https://github.com/serengil/deepface_models/releases/download/v1.0/gender_model_weights.h5
+To: /home/marc/.deepface/weights/gender_model_weights.h5
+100%|█████████████████████████████████████████████████████████████████████████████████████████████| 537M/537M [00:04<00:00, 109MB/s]
+Action: emotion:  67%|█████████████████████████████████████████████████████▎                          | 2/3 [00:13<00:06,  6.71s/it]26-01-19 22:45:06 - 🔗 facial_expression_model_weights.h5 will be downloaded from https://github.com/serengil/deepface_models/releases/download/v1.0/facial_expression_model_weights.h5 to /home/marc/.deepface/weights/facial_expression_model_weights.h5...
+Downloading...
+From: https://github.com/serengil/deepface_models/releases/download/v1.0/facial_expression_model_weights.h5
+To: /home/marc/.deepface/weights/facial_expression_model_weights.h5
+100%|██████████████████████████████████████████████████████████████████████████████████████████| 5.98M/5.98M [00:00<00:00, 26.6MB/s]
+Action: emotion: 100%|████████████████████████████████████████████████████████████████████████████████| 3/3 [00:14<00:00,  4.77s/it]
+
+=== Use Case 3: Emotion & Age Analysis ===
+Alter: 31
+Geschlecht: Woman (100.0 %)
+Emotion: neutral (86.5 %)
+bash-5.3$ 
+sh-5.3$ python deepface-all.py
+2026-01-20 20:31:49.921987: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+2026-01-20 20:31:50.206394: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-01-20 20:31:52.098494: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+2026-01-20 20:31:53.886658: E external/local_xla/xla/stream_executor/cuda/cuda_platform.cc:51] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+
+=== Use Case 1: Face Verification ===
+Gleiche Person: True
+Distanz: 0.3247
+Threshold: 0.68
+
+=== Use Case 1: Face Verification ===
+Gleiche Person: False
+Distanz: 0.8214
+Threshold: 0.68
+
+=== Use Case 1: Face Verification ===
+Gleiche Person: False
+Distanz: 0.9515
+Threshold: 0.68
+
+=== Use Case 2: Face Identification ===
+26-01-20 20:32:11 - Searching testimages/angelina_jolie.jpeg in 2011 length datastore
+26-01-20 20:32:12 - find function duration 4.082316875457764 seconds
+Beste Übereinstimmung:
+Bild: database/Angelina Jolie/058_02860eff.jpg
+Distanz: 0.2797
+
+=== Use Case 2: Face Identification ===
+26-01-20 20:32:15 - Searching testimages/tom_hanks.jpg in 2011 length datastore
+26-01-20 20:32:16 - find function duration 3.6534719467163086 seconds
+Beste Übereinstimmung:
+Bild: database/Tom Hanks/049_2924cbf0.jpg
+Distanz: 0.1698
+
+=== Use Case 2: Face Identification ===
+26-01-20 20:32:19 - Searching testimages/nicole_kidman.jpg in 2011 length datastore
+26-01-20 20:32:20 - find function duration 3.722681999206543 seconds
+Beste Übereinstimmung:
+Bild: database/Nicole Kidman/004_3491d187.jpg
+Distanz: 0.1978
+Action: emotion: 100%|████████████████████████████████████████████████████████████████████████████████| 3/3 [00:03<00:00,  1.02s/it]
+
+=== Use Case 3: Emotion & Age Analysis ===
+Alter: 31
+Geschlecht: Woman (100.0 %)
+Emotion: neutral (86.5 %)
+Action: emotion: 100%|████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  6.22it/s]
+
+=== Use Case 3: Emotion & Age Analysis ===
+Alter: 33
+Geschlecht: Woman (100.0 %)
+Emotion: happy (83.7 %)
+Action: emotion: 100%|████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  6.87it/s]
+
+=== Use Case 3: Emotion & Age Analysis ===
+Alter: 32
+Geschlecht: Woman (100.0 %)
+Emotion: neutral (94.1 %)
