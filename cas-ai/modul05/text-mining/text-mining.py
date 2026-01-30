@@ -3,99 +3,162 @@ import re
 import matplotlib.pyplot as plt
 from nltk.sentiment import SentimentIntensityAnalyzer
 
-import nltk
-nltk.download("vader_lexicon")
-
 ###
 # Getting started:
-# pip install pandas nltk matplotlib
+# pip install pandas nltk matplotlib wordcloud
 ###
 
-# -----------------------------
-# 1. CSV laden
-# -----------------------------
-df = pd.read_csv("donal_trump_tweet_history_2009_2025/djt_posts_dec2025.csv")
+# =====================================================
+# 1. Daten laden & vorbereiten
+# =====================================================
+df = pd.read_csv("donald_trump_tweet_history_2009_2025/djt_posts_dec2025.csv")
 
 # Datum parsen
 df["date"] = pd.to_datetime(df["date"], utc=True)
 df["year"] = df["date"].dt.year
 
-# Nur Originalposts (keine Reposts)
+# Nur Originalposts
 df = df[df["repost_flag"] == False]
 
-# -----------------------------
-# 2. Text Cleaning (minimal, erklärbar)
-# -----------------------------
+# Leere Texte abfangen
+df["text"] = df["text"].fillna("")
+df["word_count"] = df["word_count"].fillna(0)
+
+# nur echte Textposts
+df = df[df["word_count"] > 0]
+
+# =====================================================
+# 2. Text Cleaning (minimal & transparent)
+# =====================================================
+
 def clean_text(text):
-    if pd.isna(text):
-        return ""
     text = text.lower()
-    text = re.sub(r"http\S+", "", text)   # URLs entfernen
+    text = re.sub(r"http\S+", "", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 df["clean_text"] = df["text"].apply(clean_text)
 
-# -----------------------------
-# 3. Feature Engineering
-# -----------------------------
+# =====================================================
+# 3. Sentiment (VADER)
+# =====================================================
 
-# 3.1 Sentiment (VADER)
 sia = SentimentIntensityAnalyzer()
+
 df["sentiment"] = df["clean_text"].apply(
     lambda x: sia.polarity_scores(x)["compound"]
 )
 
-# 3.2 ALL CAPS Anteil
+# =====================================================
+# 4. Emphase-Features
+# =====================================================
+
+# 4.1 ALL CAPS Ratio
 def caps_ratio(text):
     if not isinstance(text, str):
         return 0.0
-
-    words = re.findall(r"\b[A-Z]{2,}\b", text)
+    caps_words = re.findall(r"\b[A-Z]{2,}\b", text)
     total_words = len(text.split())
-
-    return len(words) / total_words if total_words > 0 else 0.0
-
+    return len(caps_words) / total_words if total_words > 0 else 0.0
 
 df["caps_ratio"] = df["text"].apply(caps_ratio)
 
-# 3.3 Ausrufezeichen
+# 4.2 Ausrufezeichen
 df["exclamation_count"] = df["text"].str.count("!")
 
-# 3.4 Superlative / extreme Begriffe (einfaches Lexikon)
+# =====================================================
+# 5. Extreme Language – saubere Definition
+# =====================================================
+
 SUPERLATIVES = [
-    "best", "worst", "greatest", "tremendous",
-    "disaster", "total", "incredible", "fraud"
+    "best", "worst", "greatest", "biggest", "strongest",
+    "weakest", "largest", "smallest", "highest", "lowest"
 ]
 
-def contains_superlative(text):
-    return any(word in text for word in SUPERLATIVES)
+INTENSIFIERS = [
+    "very", "totally", "extremely", "absolutely",
+    "completely", "highly", "incredibly", "tremendously"
+]
 
-df["has_superlative"] = df["clean_text"].apply(contains_superlative)
+ABSOLUTES = [
+    "never", "always", "everyone", "nobody",
+    "nothing", "everything", "all", "none"
+]
 
-# -----------------------------
-# 4. Aggregation pro Jahr
-# -----------------------------
+def count_matches(text, lexicon):
+    if not isinstance(text, str):
+        return 0
+    tokens = re.findall(r"\b[a-z]+\b", text.lower())
+    return sum(1 for t in tokens if t in lexicon)
+
+df["superlative_count"] = df["clean_text"].apply(
+    lambda x: count_matches(x, SUPERLATIVES)
+)
+
+df["intensifier_count"] = df["clean_text"].apply(
+    lambda x: count_matches(x, INTENSIFIERS)
+)
+
+df["absolute_count"] = df["clean_text"].apply(
+    lambda x: count_matches(x, ABSOLUTES)
+)
+
+# Normalisierung pro 100 Wörter
+df["superlatives_per_100w"] = (df["superlative_count"] / df["word_count"]) * 100
+df["intensifiers_per_100w"] = (df["intensifier_count"] / df["word_count"]) * 100
+df["absolutes_per_100w"] = (df["absolute_count"] / df["word_count"]) * 100
+
+# =====================================================
+# 6. Aggregation pro Jahr
+# =====================================================
+
 yearly = df.groupby("year").agg({
-    "sentiment": "mean",
+    "sentiment": ["mean", "std"],
     "caps_ratio": "mean",
     "exclamation_count": "mean",
-    "has_superlative": "mean",
+    "superlatives_per_100w": "mean",
+    "intensifiers_per_100w": "mean",
+    "absolutes_per_100w": "mean",
     "text": "count"
-}).rename(columns={"text": "post_count"}).reset_index()
+}).reset_index()
 
-# -----------------------------
-# 5. Visualisierung
-# -----------------------------
+yearly.columns = [
+    "year",
+    "sentiment_mean",
+    "sentiment_std",
+    "caps_ratio",
+    "exclamation_count",
+    "superlatives_per_100w",
+    "intensifiers_per_100w",
+    "absolutes_per_100w",
+    "post_count"
+]
 
+print(yearly.tail())
+
+# =====================================================
+# 7. Visualisierungen
+# =====================================================
+
+# Sentiment Mittelwert
 plt.figure()
-plt.plot(yearly["year"], yearly["sentiment"])
+plt.plot(yearly["year"], yearly["sentiment_mean"])
 plt.title("Average Sentiment per Year")
 plt.xlabel("Year")
 plt.ylabel("Sentiment (VADER)")
-plt.savefig('m05_01_txt_mining_sentiment.png', dpi=300)
+plt.savefig('m05_01_mean_sentiment.png', dpi=300)
 plt.show()
 
+# Sentiment Varianz
+plt.figure()
+plt.plot(yearly["year"], yearly["sentiment_std"])
+plt.title("Sentiment Variability per Year")
+plt.xlabel("Year")
+plt.ylabel("Sentiment Standard Deviation")
+plt.savefig('m05_01_std_sentiment.png', dpi=300)
+plt.show()
+
+# ALL CAPS
 plt.figure()
 plt.plot(yearly["year"], yearly["caps_ratio"])
 plt.title("Average ALL CAPS Ratio per Year")
@@ -104,23 +167,126 @@ plt.ylabel("CAPS Ratio")
 plt.savefig('m05_01_caps_ratio.png', dpi=300)
 plt.show()
 
+# Exclamation
 plt.figure()
 plt.plot(yearly["year"], yearly["exclamation_count"])
-plt.title("Average ALL CAPS Ratio per Year")
+plt.title("Average Exclamation Count per Year")
 plt.xlabel("Year")
-plt.ylabel("CAPS Ratio")
+plt.ylabel("Exclamation Count")
 plt.savefig('m05_01_exclamation_count.png', dpi=300)
 plt.show()
 
+# Extreme Language
 plt.figure()
-plt.plot(yearly["year"], yearly["has_superlative"])
-plt.title("Share of Posts with Superlatives")
+plt.plot(yearly["year"], yearly["superlatives_per_100w"], label="Superlatives")
+plt.plot(yearly["year"], yearly["intensifiers_per_100w"], label="Intensifiers")
+plt.plot(yearly["year"], yearly["absolutes_per_100w"], label="Absolutes")
+plt.title("Extreme Language per 100 Words")
 plt.xlabel("Year")
-plt.ylabel("Proportion")
-plt.savefig('m05_01_superlatives_proportion.png', dpi=300)
+plt.ylabel("Frequency")
+plt.legend()
+plt.savefig('m05_01_extreme_lang.png', dpi=300)
 plt.show()
 
-# -----------------------------
-# 6. Ausgabe für Interpretation
-# -----------------------------
-print(yearly)
+# =====================================================
+# 8. Wortfrequenzen (gesamt)
+# =====================================================
+
+from collections import Counter
+from nltk.corpus import stopwords
+from wordcloud import WordCloud
+import nltk
+
+nltk.download("stopwords")
+
+# ---------------------------------------------
+# 8.1 Stopwords definieren
+# ---------------------------------------------
+
+STOPWORDS = set(stopwords.words("english"))
+
+# Korpus-spezifische Stopwords, twitter/truthsocial overhead
+CUSTOM_STOPWORDS = {
+    "trump", "donald", "realdonaldtrump",
+    "twitter", "pic", "image", "rt",
+    "amp", "https", "http", "com", "get"
+}
+
+ALL_STOPWORDS = STOPWORDS.union(CUSTOM_STOPWORDS)
+
+# ---------------------------------------------
+# 8.2 Tokenisierung & Frequenzen
+# ---------------------------------------------
+
+tokens = re.findall(r"\b[a-z]+\b", " ".join(df["clean_text"]))
+
+# laenge >2 um rauschen zu vermeiden
+filtered_tokens = [
+    t for t in tokens
+    if t not in ALL_STOPWORDS and len(t) > 2
+]
+
+word_freq = Counter(filtered_tokens)
+
+# Top 20
+top_words = pd.DataFrame(
+    word_freq.most_common(20),
+    columns=["word", "count"]
+)
+
+print(top_words)
+
+
+# =====================================================
+# 9. Visualisierung – häufigste Wörter
+# =====================================================
+
+# ---------------------------------------------
+# 9.1 Wordcloud – gesamter Zeitraum
+# ---------------------------------------------
+
+wc = WordCloud(
+    width=1400,
+    height=700,
+    background_color="white",
+    stopwords=ALL_STOPWORDS,
+    max_words=150,
+    min_font_size=10,
+    collocations=False  # extrem wichtig!
+)
+
+wc.generate_from_frequencies(word_freq)
+
+plt.figure(figsize=(14, 7))
+plt.imshow(wc, interpolation="bilinear")
+plt.axis("off")
+plt.title("Wordcloud – Most Frequent Words (Trump Tweets 2009–2025)")
+plt.savefig("m05_01_wordcloud_all.png", dpi=300, bbox_inches="tight")
+plt.show()
+
+# ---------------------------------------------
+# 9.2 Bigramme bilden
+# ---------------------------------------------
+
+bigrams = zip(filtered_tokens, filtered_tokens[1:])
+bigram_freq = Counter(
+    [" ".join(b) for b in bigrams]
+)
+
+wc_bigram = WordCloud(
+    width=1400,
+    height=700,
+    background_color="white",
+    max_words=100,
+    collocations=False
+)
+
+wc_bigram.generate_from_frequencies(bigram_freq)
+
+plt.figure(figsize=(14, 7))
+plt.imshow(wc_bigram, interpolation="bilinear")
+plt.axis("off")
+#plt.title("Bigram Wordcloud – Frequent Phrases")
+plt.savefig("m05_01_wordcloud_bigrams.png", dpi=300, bbox_inches="tight")
+plt.show()
+
