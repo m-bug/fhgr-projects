@@ -161,7 +161,7 @@ plt.show()
 # ALL CAPS
 plt.figure()
 plt.plot(yearly["year"], yearly["caps_ratio"])
-plt.title("Average ALL CAPS Ratio per Year")
+plt.title("Average ALL CAPS Ratio per Year (G1)")
 plt.xlabel("Year")
 plt.ylabel("CAPS Ratio")
 plt.savefig('m05_01_caps_ratio.png', dpi=300)
@@ -181,7 +181,7 @@ plt.figure()
 plt.plot(yearly["year"], yearly["superlatives_per_100w"], label="Superlatives")
 plt.plot(yearly["year"], yearly["intensifiers_per_100w"], label="Intensifiers")
 plt.plot(yearly["year"], yearly["absolutes_per_100w"], label="Absolutes")
-plt.title("Extreme Language per 100 Words")
+plt.title("Extreme Language per 100 Words (G2)")
 plt.xlabel("Year")
 plt.ylabel("Frequency")
 plt.legend()
@@ -197,6 +197,7 @@ from nltk.corpus import stopwords
 from wordcloud import WordCloud
 import nltk
 
+# offical nltk stopwords, besser als manuelles abfüllen
 nltk.download("stopwords")
 
 # ---------------------------------------------
@@ -205,7 +206,7 @@ nltk.download("stopwords")
 
 STOPWORDS = set(stopwords.words("english"))
 
-# Korpus-spezifische Stopwords, twitter/truthsocial overhead
+# Korpus-spezifische Stopwords, twitter/truthsocial overhead, und handles müssen auch weg
 CUSTOM_STOPWORDS = {
     "trump", "donald", "realdonaldtrump",
     "twitter", "pic", "image", "rt",
@@ -234,6 +235,7 @@ top_words = pd.DataFrame(
     columns=["word", "count"]
 )
 
+# debug top 20
 print(top_words)
 
 
@@ -252,7 +254,7 @@ wc = WordCloud(
     stopwords=ALL_STOPWORDS,
     max_words=150,
     min_font_size=10,
-    collocations=False  # extrem wichtig!
+    collocations=False  # default ist true, wordcloud probiert dann bigramms zu erkennen, möchten wir hier nicht 
 )
 
 wc.generate_from_frequencies(word_freq)
@@ -278,7 +280,7 @@ wc_bigram = WordCloud(
     height=700,
     background_color="white",
     max_words=100,
-    collocations=False
+    collocations=False # auch hier: bigrams kommen von mir und wordcloud soll hier nichts selber machen
 )
 
 wc_bigram.generate_from_frequencies(bigram_freq)
@@ -290,3 +292,34 @@ plt.axis("off")
 plt.savefig("m05_01_wordcloud_bigrams.png", dpi=300, bbox_inches="tight")
 plt.show()
 
+# ---------------------------------------------
+# 9.3.1 Top-Unigramme (Balkendiagramm)
+# ---------------------------------------------
+
+top_unigrams = word_freq.most_common(20)
+unigram_df = pd.DataFrame(top_unigrams, columns=["token", "count"])
+
+plt.figure(figsize=(10, 6))
+plt.barh(unigram_df["token"], unigram_df["count"])
+plt.gca().invert_yaxis()
+plt.title("Top 20 Most Frequent Unigrams (2009–2025)")
+plt.xlabel("Frequency")
+plt.tight_layout()
+plt.savefig("m05_02_top_unigrams_bar.png", dpi=300)
+plt.show()
+
+# ---------------------------------------------
+# 9.3.2 Top-Bigramme (Balkendiagramm)
+# ---------------------------------------------
+
+top_bigrams = bigram_freq.most_common(20)
+bigram_df = pd.DataFrame(top_bigrams, columns=["token", "count"])
+
+plt.figure(figsize=(10, 6))
+plt.barh(bigram_df["token"], bigram_df["count"])
+plt.gca().invert_yaxis()
+plt.title("Top 20 Most Frequent Bigrams (2009–2025)")
+plt.xlabel("Frequency")
+plt.tight_layout()
+plt.savefig("m05_02_top_bigrams_bar.png", dpi=300)
+plt.show()
