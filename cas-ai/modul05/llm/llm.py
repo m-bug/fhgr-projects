@@ -14,6 +14,9 @@ Requirements:
 pip install pdfplumber sentence-transformers faiss-cpu requests
 """
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 from pathlib import Path
 import re
 import pdfplumber
@@ -85,9 +88,10 @@ def chunk_text(text: str, max_chars: int = 900):
 
 class VectorStore:
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
-        self.embedder = SentenceTransformer(model_name)
+        self.embedder = SentenceTransformer(model_name, device="cpu")
         self.index = None
         self.texts = []
+
 
     def add_texts(self, texts):
         texts = [t for t in texts if len(t.strip()) > 50]
@@ -133,7 +137,7 @@ def build_prompt(context_chunks, user_query):
     )
 
 
-def query_local_llama(prompt: str, model: str = "llama3.2:3b") -> str:
+def query_local_llama(prompt: str, model: str = "phi3:mini") -> str:
     """Send prompt to a local Ollama LLaMA instance."""
     url = "http://localhost:11434/api/generate"
     payload = {
@@ -151,28 +155,31 @@ def query_local_llama(prompt: str, model: str = "llama3.2:3b") -> str:
 # 6. MAIN RAG PIPELINE
 # ---------------------------------------------------------------------
 
-def run_rag(pdf_path: str, query: str):
+def run_rag(pdf_path: str, queries: list[str]):
     print("Loading and processing PDF...")
     raw_text = extract_pdf_text(Path(pdf_path))
-    clean_text = normalize_text(raw_text)
-
+    
     print("Chunking text...")
-    chunks = chunk_text(clean_text)
+    chunks = chunk_text(raw_text, max_chars=800)
+
 
     print(f"Creating embeddings for {len(chunks)} chunks...")
     store = VectorStore()
     store.add_texts(chunks)
 
-    print("Retrieving relevant context...")
-    retrieved = store.search(query, k=4)
+    for query in queries:
+        print(f"\n=== Question: {query} ===")
+        print("Retrieving relevant context...")
+        retrieved = store.search(query, k=4)
+        prompt = build_prompt(retrieved, query)
 
-    prompt = build_prompt(retrieved, query)
+        print("Querying local LLaMA via Ollama...")
+        answer = query_local_llama(prompt)
+        
+        print("\n--- Antwort vom LLaMA ---")
+        print(answer)
+        print("-" * 50)
 
-    print("Querying local LLaMA via Ollama...")
-    answer = query_local_llama(prompt)
-
-    print("\n=== Antwort vom LLaMA ===\n")
-    print(answer)
 
 
 # ---------------------------------------------------------------------
@@ -180,7 +187,15 @@ def run_rag(pdf_path: str, query: str):
 # ---------------------------------------------------------------------
 
 if __name__ == "__main__":
+    questions = [
+        "Who are the members of the executive board (Vorstand)?",
+        "What was the net profit of Borussia Dortmund in the reported fiscal year?",
+        "What are the main business segments of Borussia Dortmund?",
+        "Which business segment contributed most to total revenue?",
+        "Does the report mention risks related to sporting success or failure?"
+    ]
+
     run_rag(
         pdf_path="gesamt-bvb-gb2425.pdf",
-        query="Who are the members of the executive board (Vorstand)?"
+        queries=questions
     )
