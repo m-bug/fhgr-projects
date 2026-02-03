@@ -1,0 +1,6 @@
+## run as root
+## hint: maybe this message is showing up: "WARNING: No NVIDIA/AMD GPU detected. Ollama will run in CPU-only mode.". Ignore it on your notebook.
+curl -fsSL https://ollama.com/install.sh | sh
+
+## pull ollama image
+ollama pull llama3.1:8b
