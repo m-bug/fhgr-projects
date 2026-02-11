@@ -7,3 +7,9 @@ ollama pull phi3:mini
 
 ## get logs
 tail -f ~/.ollama/logs/server.log
+
+## old hardware
+ollama pull llama3.1:8b
+
+## pull ollama image (smaller)
+ollama pull llama3.2:3b
