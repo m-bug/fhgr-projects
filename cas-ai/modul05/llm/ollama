@@ -3,4 +3,7 @@
 curl -fsSL https://ollama.com/install.sh | sh
 
 ## pull ollama image
-ollama pull llama3.1:8b
+ollama pull phi3:mini
+
+## get logs
+tail -f ~/.ollama/logs/server.log
