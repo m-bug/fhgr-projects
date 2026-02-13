@@ -18,6 +18,11 @@ download pdf: https://report.bvb.de/annual-report/2024-2025/services/downloads.h
 
 """
 
+###
+# Getting started:
+# pip install pdfplumber sentence-transformers faiss-cpu requests numpy
+###
+
 from pathlib import Path
 import json
 import pdfplumber
