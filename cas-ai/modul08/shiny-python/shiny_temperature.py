@@ -4,6 +4,13 @@ import matplotlib.pyplot as plt
 
 from shiny import App, ui, render, reactive
 
+# this script uses the local file "/data/AWEL_Sensors_LoRa_202501.csv"
+# overview here: https://opendata.swiss/de/dataset/lufttemperatur-und-luftfeuchte-lora-sensor-messwerte
+# download here: https://opendata.swiss/de/dataset/lufttemperatur-und-luftfeuchte-lora-sensor-messwerte/resource/a086efc4-5329-4646-9282-d49ce790014d
+
+# GET STARTED:
+# pip install shiny pandas matplotlib
+
 # =========================
 # CONFIG
 # =========================
@@ -236,6 +243,8 @@ def server(input, output, session):
 
         ax.set_title("Ø Temperatur pro Station")
         ax.set_xlabel("Temperatur (°C)")
+
+        ## small hacks: somehow the x-axis is still not properly shown.. fix later..
         ax.xaxis.set_major_locator(plt.MaxNLocator(15))
         xmin = ranking.min() - 1
         xmax = ranking.max() + 1
