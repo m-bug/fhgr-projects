@@ -41,8 +41,10 @@ def fetch_html(url: str):
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto(url)
+        # easy: determine selector
         page.wait_for_selector(".movie-teaser")
 
+        # download static content
         content = page.content()
         with open(HTML_FILE, "w", encoding="utf-8") as f:
             f.write(content)

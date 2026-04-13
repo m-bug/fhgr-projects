@@ -49,11 +49,13 @@ def scrape_and_store(target_date: str):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
+    ## headless browser start
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto(URL)
 
+        ## allow cookies, otherwise movie page was empty..
         try:
             page.click("text=Ich akzeptiere alle", timeout=5000)
         except:
@@ -61,6 +63,8 @@ def scrape_and_store(target_date: str):
 
         page.wait_for_timeout(3000)
 
+        ## all infos are stored into a dynamic JS Variable
+        ## extract all items from the structure to get all movies (all of this week)
         data = page.evaluate("() => pmkinoFrontVars.apiData.movies.items")
 
         for movie_id, movie in data.items():
@@ -69,6 +73,7 @@ def scrape_and_store(target_date: str):
             for perf in movie.get("performances", []):
                 perf_date = perf.get("date")
 
+                ## only take movies from today / given date
                 if perf_date != target_date:
                     continue
 
