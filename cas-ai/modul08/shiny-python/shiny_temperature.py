@@ -235,6 +235,7 @@ def server(input, output, session):
 
         n = len(ranking)
 
+        # adjust y height
         fig_height = max(4, n * 1.9)
 
         fig, ax = plt.subplots(figsize=(15, fig_height))
