@@ -23,7 +23,8 @@ df = score_transactions(df_raw)
 df["risk_level"] = df["risk_level"].astype(str)
 
 # -------------------------
-# CLEAN FOR TAIPY
+# MAP Integration
+# source: https://taipy-designer.readthedocs.io/wdg/wdg-geo-time/
 # -------------------------
 # Move the dictionary out of the Markdown to avoid the SyntaxError
 chart_options = {
@@ -35,19 +36,17 @@ chart_options = {
     }
 }
 
-# Mapping for your specific data
+# Mapping for specific synthetic transactions with iso3: only include countries that are in the data
 iso2_to_iso3 = {
     "US": "USA", "CA": "CAN", "GB": "GBR", "FR": "FRA", "DE": "DEU",
     "CH": "CHE", "IN": "IND", "AU": "AUS", "BR": "BRA", "CN": "CHN"
 }
 
-# ... (Your data loading code remains the same) ...
-# For demonstration, I'm assuming 'df' is already loaded and scored
-
 table_data = df.copy().fillna("")
 selected_row = table_data.iloc[0]
 
 # 3. CRITICAL: Initialize the DF with the column Taipy is looking for
+# small hack: when init the GUI user did not click an a row, so default to USA or similar, could be improved but works :)
 first_iso3 = iso2_to_iso3.get(selected_row['country'], "USA") # Default to USA or similar
 selected_row_df = pd.DataFrame([selected_row])
 selected_row_df['country_iso3'] = first_iso3
@@ -69,6 +68,7 @@ kpi_fraud_rate_text = f"{kpi_fraud_rate:.2f}%"
 
 # -------------------------
 # Sankey Diagram Functions
+# source: https://plotly.com/python/sankey-diagram/
 # -------------------------
 def build_sankey_figure(sankey_mode, country_hits_only=False):
     if sankey_mode == "country":
@@ -135,7 +135,7 @@ def build_sankey_figure(sankey_mode, country_hits_only=False):
     all_labels = ["All Transactions"] + labels
     sources = [0] * len(labels)
     targets = list(range(1, len(labels) + 1))
-    # Screenshot-inspired pastel indigo/lilac palette with stronger opacity.
+    # indigo/lilac palette, could be improved..
     link_colors = [
         "rgba(199,139,209,0.84)" if "Hit" in label or "high" in label.lower()
         else "rgba(133,137,249,0.80)"
@@ -168,15 +168,17 @@ def build_sankey_figure(sankey_mode, country_hits_only=False):
     )
     return fig
 
-
-sankey_mode = "hits"
+# -------------------------
+# Sankey Diagram Initial State
+# ------------------------- 
+sankey_mode = "hits" #default
 sankey_mode_text = "Hits / Not Hits"
 country_hits_only = False
 sankey_fig = build_sankey_figure(sankey_mode, country_hits_only)
 
 
 # -------------------------
-# Sankey Diagram State
+# Sankey Diagram State Setter
 # -------------------------
 def set_sankey_mode(state, mode):
     if mode not in {"hits", "country", "risk"}:
@@ -199,7 +201,7 @@ def on_country_hits_only_change(state, var_name, value):
     if state.sankey_mode in {"country", "risk"}:
         state.sankey_fig = build_sankey_figure(state.sankey_mode, state.country_hits_only)
 
-
+# Setters for sankey buttons
 def on_sankey_hits(state, var_name, payload):
     set_sankey_mode(state, "hits")
 
