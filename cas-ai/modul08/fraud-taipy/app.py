@@ -258,6 +258,8 @@ def on_row_select(state, var_name, payload):
             state.selected_probability_text,
         ) = format_selected_row(row)
 
+# chatgpt was a big help with the formatting of the containers using css
+# otherwise documented here: https://docs.taipy.io/en/release-4.0/userman/gui/styling/
 page = """
 <style>
 .hero {
