@@ -1,6 +1,12 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import explode, split, col
 
+# Befehl für die Spark-Ausführung
+# spark-submit \
+#    --master local[*] \
+#    --name "WordCountJob" \
+#    spark_wordcount.py
+
 # Spark Session starten
 spark = SparkSession.builder.appName("WordCount").getOrCreate()
 

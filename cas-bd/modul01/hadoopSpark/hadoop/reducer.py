@@ -1,6 +1,14 @@
 # reducer.py
 import sys
 
+# Befehl auf dem Hadoop-Cluster
+#hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar \
+#    -files mapper.py,reducer.py \
+#    -mapper "python3 mapper.py" \
+#    -reducer "python3 reducer.py" \
+#    -input /user/hadoop/input.txt \
+#    -output /user/hadoop/output_dir
+
 current_word = None
 current_count = 0
 
