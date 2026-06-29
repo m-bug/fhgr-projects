@@ -13,74 +13,83 @@ def load_and_process_data(ausgewaehltes_jahr):
     gpkg_path = "swissBOUNDARIES3D_1_5_LV95_LN02.gpkg"
     gdf_gemeinden = None
     
-    # 1. Versuche, die lokalen swisstopo-Daten zu laden
+    # 1. Geodaten laden (swisstopo Hoheitsgebiete)
     if os.path.exists(gpkg_path):
         try:
             gdf_gemeinden = gpd.read_file(gpkg_path, layer="TLM_HOHEITSGEBIET")
             gdf_gemeinden.columns = gdf_gemeinden.columns.str.upper()
             
+            # Performance-Optimierung für Plotly
             if "GEOMETRY" in gdf_gemeinden.columns:
                 gdf_gemeinden = gdf_gemeinden.set_geometry("GEOMETRY")
+            gdf_gemeinden["GEOMETRY"] = gdf_gemeinden["GEOMETRY"].simplify(10, preserve_topology=True)
             gdf_gemeinden["GEOMETRY"] = gdf_gemeinden["GEOMETRY"].force_2d()
             gdf_gemeinden = gdf_gemeinden.to_crs(epsg=4326)
             
-            if "NAME" not in gdf_gemeinden.columns:
-                possible_names = [c for c in gdf_gemeinden.columns if "NAME" in c or "GMD" in c]
-                if possible_names:
-                    gdf_gemeinden = gdf_gemeinden.rename(columns={possible_names[0]: "NAME"})
+            # BFS-ID Spalte vereinheitlichen
+            for alt in ["BFS_NUMMER", "GMDNR", "BFS_ID", "GMD_NR", "BFS"]:
+                if alt in gdf_gemeinden.columns:
+                    gdf_gemeinden = gdf_gemeinden.rename(columns={alt: "BFS_NUMMER"})
+                    break
         except Exception as e:
-            st.sidebar.warning(f"Lokales GPKG konnte nicht voll gelesen werden: {e}")
+            st.sidebar.warning(f"GPKG-Fehler: {e}")
             gdf_gemeinden = None
 
     # Fallback Online-Karte
     if gdf_gemeinden is None or len(gdf_gemeinden) == 0:
-        st.sidebar.info("Nutze Online-Ersatzkarte (ch-boundaries)...")
         url = "https://raw.githubusercontent.com/stefanolderog/geopandas-swiss-boundaries/master/data/GEN_A4_GEMEINDEN_2019.geojson"
         gdf_gemeinden = gpd.read_file(url)
         gdf_gemeinden.columns = gdf_gemeinden.columns.str.upper()
         gdf_gemeinden = gdf_gemeinden.rename(columns={"GMDNAME": "NAME", "GMDNR": "BFS_NUMMER"})
 
-    # BFS-Nummer vereinheitlichen
-    if "BFS_NUMMER" not in gdf_gemeinden.columns:
-        for alt in ["GMDNR", "BFS_ID", "GMD_NR", "BFS"]:
-            if alt in gdf_gemeinden.columns:
-                gdf_gemeinden = gdf_gemeinden.rename(columns={alt: "BFS_NUMMER"})
-                break
-                
+    # BFS_NUMMER der Karte als String-ID säubern
     gdf_gemeinden["BFS_NUMMER"] = pd.to_numeric(gdf_gemeinden["BFS_NUMMER"], errors='coerce').fillna(0).astype(int).astype(str)
 
     # 2. SBB-Daten laden
     df_sbb = pd.read_csv("generalabo-halbtax.csv", sep=";")
     df_sbb.columns = df_sbb.columns.str.upper()
     df_sbb = df_sbb[df_sbb["JAHR"] == ausgewaehltes_jahr]
-    
-    sbb_bfs_col = None
-    for col in df_sbb.columns:
-        if "BFS" in col or "GMD" in col:
-            sbb_bfs_col = col
-            break
+    df_sbb["PLZ"] = pd.to_numeric(df_sbb["PLZ"], errors='coerce').fillna(0).astype(int)
+
+    # 3. LOKALES PLZ-MAPPING
+    plz_file = "AMTOVZ_CSV_LV95.csv"
+    if os.path.exists(plz_file):
+        try:
+            try:
+                df_plz = pd.read_csv(plz_file, sep=";", encoding='utf-8-sig', on_bad_lines='skip')
+            except Exception:
+                df_plz = pd.read_csv(plz_file, sep=";", encoding='latin1', on_bad_lines='skip')
             
-    if sbb_bfs_col:
-        df_sbb = df_sbb.rename(columns={sbb_bfs_col: "BFS_NUMMER"})
+            # Spalten exakt aus deinem File matchen
+            df_plz_mapping = df_plz[["PLZ4", "BFS-Nr"]].drop_duplicates()
+            df_plz_mapping = df_plz_mapping.rename(columns={"PLZ4": "PLZ", "BFS-Nr": "BFS_NUMMER"})
+            
+            df_plz_mapping["PLZ"] = pd.to_numeric(df_plz_mapping["PLZ"], errors='coerce').fillna(0).astype(int)
+            df_plz_mapping["BFS_NUMMER"] = pd.to_numeric(df_plz_mapping["BFS_NUMMER"], errors='coerce').fillna(0).astype(int).astype(str)
+            
+            # SBB-Daten mit echten BFS-Nummern anreichern
+            df_sbb = df_sbb.merge(df_plz_mapping, on="PLZ", how="left")
+            
+        except Exception as e:
+            st.sidebar.error(f"Fehler beim Einlesen der neuen PLZ-Datei: {e}")
+            df_sbb["BFS_NUMMER"] = df_sbb["PLZ"].astype(str)
     else:
-        df_sbb["BFS_NUMMER"] = df_sbb["PLZ"]
+        st.sidebar.error(f"Datei '{plz_file}' nicht gefunden!")
+        df_sbb["BFS_NUMMER"] = df_sbb["PLZ"].astype(str)
 
-    df_sbb["BFS_NUMMER"] = pd.to_numeric(df_sbb["BFS_NUMMER"], errors='coerce').fillna(0).astype(int).astype(str)
-
-    # Abos aggregieren
+    # SBB Abos pro offizieller BFS-Gemeindenummer aggregieren
+    df_sbb["BFS_NUMMER"] = df_sbb["BFS_NUMMER"].fillna("0")
     df_sbb_grouped = df_sbb.groupby("BFS_NUMMER")[["GENERALABONNEMENT", "HALBTAXABONNEMENT"]].sum().reset_index()
 
-    # 4. Zusammenführen (how="left", damit alle 2136 Gemeinden auf der Karte bleiben)
+    # 4. Karte mit aggregierten SBB-Daten verknüpfen via BFS_NUMMER
     merged = gdf_gemeinden.merge(df_sbb_grouped, on="BFS_NUMMER", how="left")
     merged["GENERALABONNEMENT"] = merged["GENERALABONNEMENT"].fillna(0)
     merged["HALBTAXABONNEMENT"] = merged["HALBTAXABONNEMENT"].fillna(0)
     
-    # --- FEHLERBEHEBUNG FÜR DATUMSOBJEKTE (TIMESTAMP FIX) ---
-    # Wir wandeln jede Spalte, die Datumsangaben enthält, in Text (String) um.
+    # Datetime-Fix für die GeoJSON-Konvertierung
     for col in merged.columns:
         if pd.api.types.is_datetime64_any_dtype(merged[col]) or merged[col].dtype == "object":
             try:
-                # Prüfen, ob Timestamps drinstecken und konvertieren
                 if merged[col].apply(lambda x: isinstance(x, pd.Timestamp)).any():
                     merged[col] = merged[col].astype(str)
             except:
@@ -99,19 +108,26 @@ abo_typ = st.sidebar.selectbox(
 # Daten laden
 df_map = load_and_process_data(jahr)
 
-# Kontroll-Anzeige
+# Kontroll-Anzeigen in der App
 st.success(f"Geometrien geladen: {len(df_map)} Gemeinden auf der Karte.")
 aktive_gemeinden = len(df_map[df_map["GENERALABONNEMENT"] + df_map["HALBTAXABONNEMENT"] > 0])
 st.info(f"Davon erfolgreich mit SBB-Daten gefärbt: {aktive_gemeinden}")
 
-# GeoJSON extrahieren (jetzt ohne Timestamp-Absturz!)
+# GeoJSON extrahieren für Plotly Choropleth
 geojson_data = json.loads(df_map.to_json())
 for feature in geojson_data["features"]:
     feature["id"] = str(feature["properties"]["BFS_NUMMER"])
 
+# --- OPTIMIERUNG DER FARBSKALA (95%-Quantil gegen extreme Ausreisser-Städte) ---
+non_zero_data = df_map[df_map[abo_typ] > 0][abo_typ]
+if not non_zero_data.empty:
+    max_val = non_zero_data.quantile(0.95)  # Schützt ländliche Gebiete vor dem Ausbleichen
+else:
+    max_val = 10
+
 color_scale = "Reds" if abo_typ == "GENERALABONNEMENT" else "Blues"
 
-# --- Plotly Choroplethenkarte ---
+# --- Plotly Choroplethenkarte (OPTIMIERTE FARBKRAFT & TRANSPARENZ) ---
 fig = px.choropleth_map(
     df_map,
     geojson=geojson_data,        
@@ -121,7 +137,8 @@ fig = px.choropleth_map(
     map_style="carto-positron",
     zoom=7.5,
     center={"lat": 46.8182, "lon": 8.2275},  
-    opacity=0.6,
+    opacity=0.85,                           # Erhöhte Deckkraft für kräftigere Farben
+    range_color=[0, max_val],               # Skala dynamisch gestrafft
     hover_name="NAME",                       
     labels={"GENERALABONNEMENT": "GAs", "HALBTAXABONNEMENT": "Halbtax"}
 )
