@@ -5,6 +5,28 @@ import streamlit as st
 import json
 import os
 
+## getting started
+## pip install geopandas pandas plotly streamlit pyogrio
+
+## idea:
+# Map the SBB subscription data: First resolve the structural mismatch between 
+# Swiss postal codes (PLZ) and official municipal borders by using an 
+# official mapping dataset (AMTOVZ_CSV_LV95.csv) to link each PLZ 
+# to its correct FSO/BFS municipality number. Once the SBB figures 
+# were aggregated by municipality, they got merged with swisstopo’s 
+# spatial geometries (swissBOUNDARIES3D) using GeoPandas. 
+# Finally, an interactive Streamlit dashboard was created using Plotly, 
+# applying a "95th percentile color-scale constraint" to balance urban outliers
+#  and make regional trends visible. 
+##
+
+
+#################################################
+### RUN THE SCRIPT
+##
+## streamlit run geo.py
+#################################################
+
 st.set_page_config(layout="wide")
 st.title("🗺️ SBB Abonnement-Dichte in der Schweiz")
 
@@ -14,12 +36,13 @@ def load_and_process_data(ausgewaehltes_jahr):
     gdf_gemeinden = None
     
     # 1. Geodaten laden (swisstopo Hoheitsgebiete)
+    ## source: https://www.swisstopo.admin.ch/de/landschaftsmodell-swissboundaries3d
     if os.path.exists(gpkg_path):
         try:
             gdf_gemeinden = gpd.read_file(gpkg_path, layer="TLM_HOHEITSGEBIET")
             gdf_gemeinden.columns = gdf_gemeinden.columns.str.upper()
             
-            # Performance-Optimierung für Plotly
+            # Performance-Optimierung für Plotly, hat wirklich etwas ausgemacht.. 
             if "GEOMETRY" in gdf_gemeinden.columns:
                 gdf_gemeinden = gdf_gemeinden.set_geometry("GEOMETRY")
             gdf_gemeinden["GEOMETRY"] = gdf_gemeinden["GEOMETRY"].simplify(10, preserve_topology=True)
@@ -42,16 +65,19 @@ def load_and_process_data(ausgewaehltes_jahr):
         gdf_gemeinden.columns = gdf_gemeinden.columns.str.upper()
         gdf_gemeinden = gdf_gemeinden.rename(columns={"GMDNAME": "NAME", "GMDNR": "BFS_NUMMER"})
 
-    # BFS_NUMMER der Karte als String-ID säubern
+    # BFS_NUMMER der Karte als String-ID säubern, sonst error im log..
     gdf_gemeinden["BFS_NUMMER"] = pd.to_numeric(gdf_gemeinden["BFS_NUMMER"], errors='coerce').fillna(0).astype(int).astype(str)
 
     # 2. SBB-Daten laden
+    ## source: https://data.sbb.ch/explore/dataset/generalabo-halbtax/table/?sort=jahr_an_anno
     df_sbb = pd.read_csv("generalabo-halbtax.csv", sep=";")
+    ## alles zu upper.. 
     df_sbb.columns = df_sbb.columns.str.upper()
     df_sbb = df_sbb[df_sbb["JAHR"] == ausgewaehltes_jahr]
     df_sbb["PLZ"] = pd.to_numeric(df_sbb["PLZ"], errors='coerce').fillna(0).astype(int)
 
-    # 3. LOKALES PLZ-MAPPING
+    # 3. LOKALES PLZ-MAPPING -> braucht es um die brücke zu schlagen zwischen den beiden datasets..
+    ## source: https://www.swisstopo.admin.ch/de/amtliches-ortschaftenverzeichnis#Download
     plz_file = "AMTOVZ_CSV_LV95.csv"
     if os.path.exists(plz_file):
         try:
@@ -60,7 +86,7 @@ def load_and_process_data(ausgewaehltes_jahr):
             except Exception:
                 df_plz = pd.read_csv(plz_file, sep=";", encoding='latin1', on_bad_lines='skip')
             
-            # Spalten exakt aus deinem File matchen
+            # Spalten exakt aus de File matchen
             df_plz_mapping = df_plz[["PLZ4", "BFS-Nr"]].drop_duplicates()
             df_plz_mapping = df_plz_mapping.rename(columns={"PLZ4": "PLZ", "BFS-Nr": "BFS_NUMMER"})
             
@@ -86,7 +112,7 @@ def load_and_process_data(ausgewaehltes_jahr):
     merged["GENERALABONNEMENT"] = merged["GENERALABONNEMENT"].fillna(0)
     merged["HALBTAXABONNEMENT"] = merged["HALBTAXABONNEMENT"].fillna(0)
     
-    # Datetime-Fix für die GeoJSON-Konvertierung
+    # Datetime-Fix: Für die GeoJSON-Konvertierung, um den Datums error zu vermeiden..
     for col in merged.columns:
         if pd.api.types.is_datetime64_any_dtype(merged[col]) or merged[col].dtype == "object":
             try:
@@ -99,6 +125,7 @@ def load_and_process_data(ausgewaehltes_jahr):
 
 # --- Streamlit Steuerung ---
 st.sidebar.header("Filter-Optionen")
+## todo: jahre dynamisch machen..
 jahr = st.sidebar.selectbox("Jahr auswählen", options=[2021, 2022, 2023, 2024])
 abo_typ = st.sidebar.selectbox(
     "Welches Abonnement möchtest du anzeigen?",
@@ -121,13 +148,13 @@ for feature in geojson_data["features"]:
 # --- OPTIMIERUNG DER FARBSKALA (95%-Quantil gegen extreme Ausreisser-Städte) ---
 non_zero_data = df_map[df_map[abo_typ] > 0][abo_typ]
 if not non_zero_data.empty:
-    max_val = non_zero_data.quantile(0.95)  # Schützt ländliche Gebiete vor dem Ausbleichen
+    max_val = non_zero_data.quantile(0.95)  # ländliche Gebiete (tiefe Zahlen) sonst zu bleich/hell
 else:
     max_val = 10
 
 color_scale = "Reds" if abo_typ == "GENERALABONNEMENT" else "Blues"
 
-# --- Plotly Choroplethenkarte (OPTIMIERTE FARBKRAFT & TRANSPARENZ) ---
+# --- Plotly Choroplethenkarte: https://plotly.com/python/choropleth-maps/ ---
 fig = px.choropleth_map(
     df_map,
     geojson=geojson_data,        
@@ -137,8 +164,8 @@ fig = px.choropleth_map(
     map_style="carto-positron",
     zoom=7.5,
     center={"lat": 46.8182, "lon": 8.2275},  
-    opacity=0.85,                           # Erhöhte Deckkraft für kräftigere Farben
-    range_color=[0, max_val],               # Skala dynamisch gestrafft
+    opacity=0.85,                           # kräftigere Farben
+    range_color=[0, max_val],               # Skala dynamisch
     hover_name="NAME",                       
     labels={"GENERALABONNEMENT": "GAs", "HALBTAXABONNEMENT": "Halbtax"}
 )
