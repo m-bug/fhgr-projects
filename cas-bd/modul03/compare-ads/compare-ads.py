@@ -14,8 +14,6 @@ try:
 except FileNotFoundError:
     print(f"Fehler: Die Datei '{csv_dateipfad}' wurde nicht gefunden. Generiere synthetische Testdaten...")
 
-# --- AB HIER MIT DEINEN ECHTEN DATEN ARBEITEN ---
-
 # 2. Datenbereinigung (Methodischer Schritt für deine Arbeit!)
 # Wir behalten nur Zeilen, wo control+old_page ODER treatment+new_page übereinstimmen
 df_cleaned = df[
@@ -37,7 +35,7 @@ print("--- DESKRIPTIVE STATISTIK ---")
 print(conversion_rates.to_string())
 print("\n")
 
-# 4. Schließende Statistik: Chi-Quadrat-Test (Kat-Kat Hypothese)
+# 4. Schliessende Statistik: Chi-Quadrat-Test (Kat-Kat Hypothese)
 # Kreuztabelle erstellen (Contingency Table)
 contingency_table = pd.crosstab(df_cleaned["group"], df_cleaned["converted"])
 
@@ -75,7 +73,7 @@ else:
     )
 
 
-# --- 5. VISUALISIERUNG FÜR DIE PRÄSENTATION / FOLIE ---
+# --- VISUALISIERUNG ---
 
 # Stil definieren für ein sauberes, wissenschaftliches Layout
 sns.set_theme(style="whitegrid")
@@ -99,7 +97,6 @@ bars = plt.bar(
     alpha=0.85,
 )
 
-# Werte-Labels zentriert direkt auf die Balken schreiben
 for bar in bars:
     height = bar.get_height()
     plt.text(
@@ -138,7 +135,7 @@ plt.savefig("m03_02_ab_test_conversion_rates.png", dpi=300)
 print("\nGrafik erfolgreich unter 'ab_test_conversion_rates.png' gespeichert.")
 plt.show()
 
-# --- 6. ERWEITERTE ANALYSE: ZEITLICHER VERLAUF (KUMULIERTE CONVERSION RATE) ---
+# --- ERWEITERTE ANALYSE: ZEITLICHER VERLAUF (KUMULIERTE CONVERSION RATE) ---
 
 try:
     print("\nBerechne zeitlichen Verlauf für erweiterten Plot...")
