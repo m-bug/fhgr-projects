@@ -2,6 +2,8 @@
 E-Commerce Analyse: Einfluss der Verweildauer auf den Umsatz
 Datenquelle: https://www.kaggle.com/datasets/kzmontage/e-commerce-website-logs
 
+**Disclaimer**: Dieser Code wurde mit der Hilfe von claude.ai erstellt. 
+
 Struktur:
 1. Daten einlesen & Qualitätscheck
 2. Deskriptive Statistik
