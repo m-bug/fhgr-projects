@@ -94,6 +94,7 @@ ZA10132_v2-0-0.sav
 netflix_cluster_profile.csv
 netflix_users_mit_clustern.csv
 netflix_users.csv
+spotify_dataset.csv
 
 # -----------------------------------
 # Python cache
