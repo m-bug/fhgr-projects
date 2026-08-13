@@ -13,6 +13,7 @@ from sklearn.linear_model import LinearRegression, PoissonRegressor
 
 # ---------------------------------------------------------------
 # 1. Daten einlesen
+# source: https://www.gesis.org/allbus/allbus
 # ---------------------------------------------------------------
 SAV_PATH = "ZA8831_v1-3-0.sav"
 
