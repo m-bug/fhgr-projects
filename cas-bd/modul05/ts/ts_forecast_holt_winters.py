@@ -6,6 +6,7 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 # ==========================================
 # 1. DATEN EINLESEN & AUFBEREITEN
+# source: https://www.kaggle.com/datasets/stefancomanita/hourly-electricity-consumption-and-production
 # ==========================================
 file_path = "electricity_consumption.csv" 
 
