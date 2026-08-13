@@ -95,6 +95,9 @@ netflix_cluster_profile.csv
 netflix_users_mit_clustern.csv
 netflix_users.csv
 spotify_dataset.csv
+electricity_consumption.csv
+ZA8831_v1-3-0.sav
+WA_Fn-UseC_-HR-Employee-Attrition.csv
 
 # -----------------------------------
 # Python cache
