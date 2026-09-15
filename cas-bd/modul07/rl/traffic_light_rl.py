@@ -16,6 +16,8 @@ Getting started:
     pip install pygame
     pip install pygame-ce
 
+Der folgende Code wurde mit Hilfe von Gemini erstellt.
+
 Run:  python traffic_light_rl.py
 """
 
