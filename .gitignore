@@ -98,6 +98,8 @@ spotify_dataset.csv
 electricity_consumption.csv
 ZA8831_v1-3-0.sav
 WA_Fn-UseC_-HR-Employee-Attrition.csv
+ogd115_gest_bilanz.csv
+welthandel.csv
 
 # -----------------------------------
 # Python cache
