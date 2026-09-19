@@ -1,0 +1,7 @@
+country,mode,min_date,max_drop_pct,recovery_days
+Germany,driving,2020-03-24,55.4,59.0
+Germany,walking,2020-03-23,57.1,66.0
+Germany,transit,2020-03-24,69.1,90.0
+Switzerland,driving,2020-03-23,52.5,56.0
+Switzerland,walking,2020-03-23,56.2,61.0
+Switzerland,transit,2020-03-24,76.3,
