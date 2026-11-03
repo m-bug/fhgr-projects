@@ -47,6 +47,8 @@ def objective_function(point):
 
 # ==============================================================================
 # 3. OPIMIERUNG UND LÖSUNG
+# source: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
+# Google Gemini hat geholfen den richtigen Solver (sollte bounds supporten) auszuwählen und zu implementieren.
 # ==============================================================================
 # Startwert für den Solver (z. B. einfacher Schwerpunkts-Mittelwert)
 initial_guess = np.mean(coords, axis=0)
