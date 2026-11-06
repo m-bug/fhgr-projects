@@ -111,7 +111,7 @@ def modell():
     # C sehr gross = praktisch keine Regularisierung (klassische logistische Regression)
     return LogisticRegression(C=1e6, max_iter=5000)
 
-
+## Gemini: Wie muss die GAIN Kurve konstruiert werden? 
 def gain_kurve(y, p):
     """Gain: Anteil der erfassten Kündiger, wenn man die Kunden nach Risiko sortiert
     von oben her anspricht."""
