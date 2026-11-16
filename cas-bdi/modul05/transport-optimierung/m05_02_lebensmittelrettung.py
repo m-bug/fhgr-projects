@@ -5,6 +5,9 @@ import matplotlib.patheffects as pe
 from matplotlib.lines import Line2D
 from scipy.optimize import milp, LinearConstraint, Bounds
 
+#GETTING STARTED
+# pip install numpy networkx matplotlib scipy
+
 # ------------------------------------------------------------
 # 1. static date
 # koordinaten kopiert von map.geo.admin.ch
